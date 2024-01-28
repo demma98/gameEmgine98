@@ -1,0 +1,11 @@
+move:
+-arrow keys
+
+add row/column:
+-shift + arrow keys
+
+flip vertical:
+-z
+
+flip horizontal:
+-x

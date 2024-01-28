@@ -1,0 +1,2 @@
+g++ -o launch launch.cpp level.cpp table.cpp block.cpp living.cpp disk.cpp -lSDL2 -lSDL2main -lSDL2_image -lstdc++ -m32 -mwindows
+g++ -o editor editor.cpp level.cpp table.cpp block.cpp living.cpp disk.cpp -lSDL2 -lSDL2main -lSDL2_image -lstdc++ -m32
