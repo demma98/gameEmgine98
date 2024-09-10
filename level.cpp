@@ -13,66 +13,54 @@ Level :: Level(const char *entities_path, SDL_Renderer *renderer){
 
 void Level :: update(bool update_entities){
     const Uint8* state = SDL_GetKeyboardState(nullptr);
-    for(std::vector<Living>::iterator e = entities.begin(); e != entities.end(); e++){
+    for(std::list<Living * >::iterator e = entities.begin(); e != entities.end(); e++){
         if(update_entities)
-            switch(e->id){
+            switch((*e)->id){
                 case 0:
-                    if(state[SDL_SCANCODE_RIGHT]){
-                        if(e->speed_x < 1.5)
-                            e->speed_x += 0.3;
-                    }
-                    else{
-                        if(e->speed_x > 0)
-                            if(e->speed_x > 0.3)
-                                e->speed_x -= 0.3;
-                            else
-                                e->speed_x = 0;
-                    }
-                    if(state[SDL_SCANCODE_LEFT]){
-                        if(e->speed_x > -1.5)
-                            e->speed_x -= 0.3;
-                    }
-                    else{
-                        if(e->speed_x < 0)
-                            if(e->speed_x < -0.3)
-                                e->speed_x += 0.3;
-                            else
-                                e->speed_x = 0;
-                    }
-                    
-                    if(state[SDL_SCANCODE_DOWN]){
-                        if(e->speed_y < 1.5)
-                            e->speed_y += 0.3;
-                    }
-                    else{
-                        if(e->speed_y > 0)
-                            if(e->speed_y > 0.3)
-                                e->speed_y -= 0.3;
-                            else
-                                e->speed_y = 0;
-                    }
-                    if(state[SDL_SCANCODE_UP]){
-                        if(e->speed_y > -1.5)
-                            e->speed_y -= 0.3;
-                    }
-                    else{
-                        if(e->speed_y < 0)
-                            if(e->speed_y < -0.3)
-                                e->speed_y += 0.3;
-                            else
-                                e->speed_y = 0;
+                    break;
+
+                case 1:
+                    if((*e)->distanceDown(*tables.begin()) == 0.0){
+                        if((*e)->tempBool){
+                            if((*e)->speed_x < 1.1)
+                                (*e)->speed_x += 0.1;
+                        }
+                        else{
+                            if((*e)->speed_x > 1.1)
+                                (*e)->speed_x -= 0.1;
+                        }
+                        if(!(*e)->nextDiagonalBlock(*tables.begin(), (*e)->tempBool, true))
+                            (*e)->tempBool = !(*e)->tempBool;
                     }
                     break;
             }
-        e->update(tables[0]);
+
+            //gravity
+            if((*e)->falls){
+                if((*e)->distanceDown(*tables.begin()) == 0.0)
+                    (*e)->coyote_time = -1;
+                else{
+                    if((*e)->coyote_time == -1 && (*e)->speed_y == 0.0)
+                        (*e)->coyote_time = 5;
+                    else if((*e)->coyote_time > 0)
+                        (*e)->coyote_time -= 1;
+                    else
+                        if((*e)->speed_y < 2.5){
+                            (*e)->speed_y += 0.8;
+                            if((*e)->speed_y > 2.5)
+                                (*e)->speed_y = 2.5;
+                        }
+                }
+            }
+            (*e)->update(*tables.begin());
         }
 }
 
 void Level :: render(SDL_Renderer *renderer){
-    for(std::vector<Living>::iterator e = entities.begin(); e != entities.end(); e++){
-        e->render(renderer, textures[e->id], tables[0].off_x, tables[0].off_y);
+    for(std::list<Living *>::iterator e = entities.begin(); e != entities.end(); e++){
+        (*e)->render(renderer, textures[(*e)->id], tables.begin()->off_x, tables.begin()->off_y);
     }
-    for(std::vector<Table>::iterator t = tables.begin();t != tables.end(); t++)
+    for(std::list<Table>::iterator t = tables.begin();t != tables.end(); t++)
         t->render(renderer);
 }
 
@@ -81,7 +69,7 @@ void Level :: update(){
 }
 
 void Level :: destroy(){
-    for(std::vector<Table>::iterator t = tables.begin();t != tables.end(); t++)
+    for(std::list<Table>::iterator t = tables.begin();t != tables.end(); t++)
             t->destroy();
 }
 
@@ -99,7 +87,8 @@ void Level :: load(){
             temp_y = Disk().loadNumber(f);
             temp_y *= Block().height;
             temp_id = Disk().loadNumber(f);
-            entities.push_back(Living(temp_x, temp_y, temp_id));
+
+            addEntityId(temp_x, temp_y, temp_id);
         }
     }
 
@@ -112,14 +101,14 @@ void Level :: save(){
     if(f != NULL){
         Disk().saveNumber(f, entities.size());
 
-        for(int i = 0; i < entities.size(); i++){
-            Disk().saveNumber(f, entities[i].x / Block().width);
-            Disk().saveNumber(f, entities[i].y / Block().height);
-            Disk().saveNumber(f, entities[i].id);
+        for(std::list<Living *>::iterator i = entities.begin(); i != entities.end(); i++){
+            Disk().saveNumber(f, (*i)->x / Block().width);
+            Disk().saveNumber(f, (*i)->y / Block().height);
+            Disk().saveNumber(f, (*i)->id);
         }
     }
 
-    for(std::vector<Table>::iterator t = tables.begin();t != tables.end(); t++)
+    for(std::list<Table>::iterator t = tables.begin();t != tables.end(); t++)
         t->save();
 
     fclose(f);
@@ -132,38 +121,53 @@ void Level :: setTable(int num, int max_block, const char *path, SDL_Renderer *r
 
 void Level :: changeEntity(int n, int change){
     if(n < entities.size()){
-        entities[n].id += change;
-        entities[n].id %= entities_n;
+        std::list<Living *>::iterator l = entities.begin();
+        for(int i = 0; l != entities.end() && i != n; i++, l++);
+        (*l)->id += change;
+        (*l)->id %= entities_n;
     }
     update(false);
 }
 
 void Level :: setEntity(int n, int set){
     if(n < entities.size()){
-        entities[n].id = set % entities_n;
+        std::list<Living *>::iterator l = entities.begin();
+        for(int i = 0; l != entities.end() && i != n; i++, l++);
+        (*l)->id = set % entities_n;
     }
     update(false);
 }
 
 int Level :: getEntity(int x, int y){
     int res = 0;
-    for(std::vector<Living>::iterator i = entities.begin(); i != entities.end(); i++){
-        if(i->x < x && x < i->x + i->width)
-            if(i->y < y && y < i->y + i->height)
+    for(std::list<Living *>::iterator i = entities.begin(); i != entities.end(); i++){
+        if((*i)->x < x && x < (*i)->x + (*i)->width)
+            if((*i)->y < y && y < (*i)->y +(*i)->height)
                 return res;
         res++;
     }
     return -1;
 }
 
-void Level :: addEntity(int x, int y){
+void Level :: addEntityId(int x, int y, int id){
     int temp_x = x;
     int temp_y = y;
-    int temp_id = 1;
-    entities.push_back(Living(temp_x, temp_y, temp_id));
+    int temp_id = id;
+
+    switch(temp_id){
+        case 0:
+        entities.push_back(new Player(temp_x, temp_y, temp_id));
+            break;
+    }
     update(false);
 }
 
+void Level :: addEntity(int x, int y){
+    addEntityId(x, y, 1);
+}
+
 void Level :: deleteEntity(int n){
-    entities.erase(entities.begin() + n);
+    std::list<Living *>::iterator l = entities.begin();
+    for(int i = 0; l != entities.end() && i != n; i++, l++);
+    entities.erase(l);
 }

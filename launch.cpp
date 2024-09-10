@@ -67,6 +67,7 @@ void update(bool *running){
             break;
           case SDLK_r:
             init();
+            break;
         }
         break;
       case SDL_QUIT:
@@ -77,25 +78,27 @@ void update(bool *running){
 }
 
 void update_frame(Level *level){
+  Living *entity_0 = *level->entities.begin();
+  std::list<Table>::iterator table_0 = level->tables.begin();
   level->update();
-  if(level->tables[0].width * Block().width > SCREEN_WIDTH){
-    if(level->entities[0].x > SCREEN_WIDTH/2)
-      if(level->entities[0].x < level->tables[0].width * Block().width - SCREEN_WIDTH/2)
-        level->tables[0].off_x = SCREEN_WIDTH/2 - level->entities[0].x;
+  if(table_0->width * Block().width > SCREEN_WIDTH){
+    if(entity_0->x > SCREEN_WIDTH/2)
+      if(entity_0->x < table_0->width * Block().width - SCREEN_WIDTH/2)
+        table_0->off_x = SCREEN_WIDTH/2 - entity_0->x;
       else
-        level->tables[0].off_x = SCREEN_WIDTH - level->tables[0].width * Block().width;
+        table_0->off_x = SCREEN_WIDTH - table_0->width * Block().width;
     else
-      level->tables[0].off_x = 0;
+      table_0->off_x = 0;
   }
   
-  if(level->tables[0].height * Block().height > SCREEN_HEIGHT){
-    if(level->entities[0].y > SCREEN_HEIGHT/2)
-      if(level->entities[0].y < level->tables[0].height * Block().height - SCREEN_HEIGHT/2)
-        level->tables[0].off_y = SCREEN_HEIGHT/2 - level->entities[0].y;
+  if(table_0->height * Block().height > SCREEN_HEIGHT){
+    if(entity_0->y > SCREEN_HEIGHT/2)
+      if(entity_0->y < table_0->height * Block().height - SCREEN_HEIGHT/2)
+        table_0->off_y = SCREEN_HEIGHT/2 - entity_0->y;
       else
-        level->tables[0].off_y = SCREEN_HEIGHT - level->tables[0].height * Block().height;
+        table_0->off_y = SCREEN_HEIGHT - table_0->height * Block().height;
     else
-      level->tables[0].off_y = 0;
+      table_0->off_y = 0;
   }
 }
 

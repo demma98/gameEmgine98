@@ -62,6 +62,8 @@ void init(){
 void update(bool *running, int *change_jump, SDL_Renderer *renderer, Level *level, int *mode, int *entity){
   SDL_Event event;
   const Uint8* state = SDL_GetKeyboardState(nullptr);
+  std::list<Table>::iterator t = level->tables.begin();
+  for(int i = 0; i != *mode - 1 && t != level->tables.end(); i++, t++);
   while (SDL_PollEvent(&event)) {
     switch (event.type) {
 
@@ -77,41 +79,41 @@ void update(bool *running, int *change_jump, SDL_Renderer *renderer, Level *leve
           case SDLK_UP:
             if(*mode != 0){
               if(state[SDL_SCANCODE_LSHIFT] || state[SDL_SCANCODE_RSHIFT])
-                level->tables[*mode - 1].addRows(renderer, -1);
+                t->addRows(renderer, -1);
               else
-                level->tables[*mode - 1].off_y += 8;
+                t->off_y += 8;
             }
             break;
           case SDLK_DOWN:
             if(*mode != 0){
               if(state[SDL_SCANCODE_LSHIFT] || state[SDL_SCANCODE_RSHIFT])
-                level->tables[*mode - 1].addRows(renderer, 1);
+                t->addRows(renderer, 1);
               else
-                level->tables[*mode - 1].off_y -= 8;
+                t->off_y -= 8;
             }
             break;
           case SDLK_LEFT:
             if(*mode != 0){
               if(state[SDL_SCANCODE_LSHIFT] || state[SDL_SCANCODE_RSHIFT])
-                level->tables[*mode - 1].addColumns(renderer, -1);
+                t->addColumns(renderer, -1);
               else
-                level->tables[*mode - 1].off_x += 8;
+                t->off_x += 8;
             }
             break;
           case SDLK_RIGHT:
             if(*mode != 0){
               if(state[SDL_SCANCODE_LSHIFT] || state[SDL_SCANCODE_RSHIFT])
-                level->tables[*mode - 1].addColumns(renderer, 1);
+                t->addColumns(renderer, 1);
               else
-                level->tables[*mode - 1].off_x -= 8;
+                t->off_x -= 8;
             }
             break;
 
           case SDLK_z:
-            level->tables[0].flipVertical(renderer, true);
+            t->flipVertical(renderer, true);
             break;
           case SDLK_x:
-            level->tables[0].flipHorizontal(renderer, true);
+            t->flipHorizontal(renderer, true);
             break;
             
           case SDLK_a:
@@ -165,7 +167,7 @@ void update(bool *running, int *change_jump, SDL_Renderer *renderer, Level *leve
         switch (event.button.button) {
           case SDL_BUTTON_LEFT:
             if(*mode != 0)
-              level->tables[*mode - 1].changeBlock(renderer, (mouse_x - level->tables[*mode - 1].off_x) / Block().width, (mouse_y - level->tables[*mode - 1].off_y) / Block().height, *change_jump, true);
+              t->changeBlock(renderer, (mouse_x - t->off_x) / Block().width, (mouse_y - t->off_y) / Block().height, *change_jump, true);
             else{
               int i = level->getEntity(mouse_x, mouse_y);
               if(i != -1)
@@ -177,7 +179,7 @@ void update(bool *running, int *change_jump, SDL_Renderer *renderer, Level *leve
             break;
           case SDL_BUTTON_RIGHT:
             if(*mode != 0)
-              level->tables[*mode - 1].setBlock(renderer, (mouse_x - level->tables[*mode - 1].off_x) / Block().width, (mouse_y - level->tables[*mode - 1].off_y) / Block().height, 0, true);
+              t->setBlock(renderer, (mouse_x - t->off_x) / Block().width, (mouse_y - t->off_y) / Block().height, 0, true);
             else{
               int i = level->getEntity(mouse_x, mouse_y);
               if(i != -1)

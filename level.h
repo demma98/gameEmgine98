@@ -1,8 +1,12 @@
 #include "SDL2/SDL.h"
-#include "vector"
+#include "list"
 
 #ifndef LIVING_GUARD
-#include "living.h"
+#include "living/living.h"
+#endif
+
+#ifndef PLAYER_GUARD
+#include "living/player.h"
 #endif
 
 #ifndef DISK_GUARD
@@ -22,8 +26,8 @@ class Level{
     public:
         const char *entities_path;
         int entities_n = 2;
-        std::vector <Living> entities;
-        std::vector <Table> tables;
+        std::list <Living *> entities;
+        std::list <Table> tables;
         SDL_Texture *textures[8];
 
         Level(const char *entities_path, SDL_Renderer *renderer);
@@ -39,6 +43,7 @@ class Level{
         void changeEntity(int n, int change);
         void setEntity(int n, int set);
         int getEntity(int x, int y);
+        void addEntityId(int x, int y, int id);
         void addEntity(int x, int y);
         void deleteEntity(int n);
 };
